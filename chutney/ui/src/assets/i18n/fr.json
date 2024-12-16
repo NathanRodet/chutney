@@ -14,7 +14,7 @@
             "variable": "Variable",
             "envVariable": "Variables",
             "dataset": "Dataset",
-            "jiraId": "Identifiant jira du scénario",
+            "jiraId": "Identifiant jira",
             "roles": "Roles",
             "admin": "Admin",
             "profile": "Profil",
