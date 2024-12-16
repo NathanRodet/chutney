@@ -21,7 +21,6 @@ export const targetsRoutes: Routes = [
     },
     {
         path: ':name',
-        title: 'target details',
         component: TargetComponent,
         resolve: {targets: targetsResolver, environmentsNames: environmentsNamesResolver},
         data: { 'authorizations': [ Authorization.ADMIN_ACCESS ] }
