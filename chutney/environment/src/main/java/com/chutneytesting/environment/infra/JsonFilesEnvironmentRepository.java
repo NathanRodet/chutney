@@ -58,7 +58,7 @@ public class JsonFilesEnvironmentRepository implements EnvironmentRepository {
     public Environment findByName(String name) throws EnvironmentNotFoundException {
         Path environmentPath = getEnvironmentPath(name);
         if (!Files.exists(environmentPath)) {
-            throw new EnvironmentNotFoundException("Configuration file not found: " + environmentPath);
+            throw new EnvironmentNotFoundException(environmentPath);
         }
         try {
             byte[] bytes = Files.readAllBytes(environmentPath);
@@ -91,13 +91,13 @@ public class JsonFilesEnvironmentRepository implements EnvironmentRepository {
     public void delete(String name) {
         Path environmentPath = getEnvironmentPath(name);
         if (!Files.exists(environmentPath)) {
-            throw new EnvironmentNotFoundException("Configuration file not found: " + environmentPath);
+            throw new EnvironmentNotFoundException(environmentPath);
         }
         try {
             Path backupPath = Paths.get(environmentPath.toString() + UUID.randomUUID().getMostSignificantBits() + ".backup");
             Files.move(environmentPath, backupPath);
         } catch (IOException e) {
-            throw new CannotDeleteEnvironmentException("Cannot delete configuration file: " + environmentPath, e);
+            throw new CannotDeleteEnvironmentException(environmentPath, e);
         }
     }
 

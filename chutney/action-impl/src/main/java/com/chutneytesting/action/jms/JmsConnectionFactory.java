@@ -93,11 +93,13 @@ public class JmsConnectionFactory {
                 }
             });
         } catch (InvalidSelectorException e) {
-            throw new UncheckedJmsException("Cannot parse selector " + e.getMessage(), e);
+            throw new UncheckedJmsException(e);
         } catch (NameNotFoundException e) {
-            throw new UncheckedJmsException("Cannot find destination " + e.getMessage() + " on jms server " + target.name() + " (" + target.uri().toString() + ")", e);
-        } catch (NamingException | JMSException e) {
-            throw new UncheckedJmsException("Cannot connect to jms server " + target.name() + " (" + target.uri().toString() + "): " + e.getMessage(), e);
+            throw new UncheckedJmsException(e, target);
+        } catch (NamingException e) {
+            throw new UncheckedJmsException(e, target);
+        } catch (JMSException e) {
+            throw new UncheckedJmsException(e, target);
         }
     }
 

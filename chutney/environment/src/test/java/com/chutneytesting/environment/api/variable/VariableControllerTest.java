@@ -231,7 +231,7 @@ public class VariableControllerTest {
             .thenAnswer(iom -> {
                     String envNameParam = iom.getArgument(0);
                     if (!registeredEnvironments.containsKey(envNameParam)) {
-                        throw new EnvironmentNotFoundException("test env not found");
+                        throw new EnvironmentNotFoundException(List.of("test env not found"));
                     }
                     return registeredEnvironments.get(envNameParam);
                 }

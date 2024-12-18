@@ -125,7 +125,7 @@ public class HttpEnvironmentApiTest {
 
     @Test
     public void createEnvironment_returns_400_when_name_is_invalid() throws Exception {
-        doThrow(new InvalidEnvironmentNameException("message")).when(environmentRepository).save(any());
+        doThrow(new InvalidEnvironmentNameException()).when(environmentRepository).save(any());
         mockMvc.perform(
                 post(environmentBasePath)
                     .content("{\"name\": \"env test\", \"description\": \"test description\"}")
@@ -156,7 +156,7 @@ public class HttpEnvironmentApiTest {
 
     @Test
     public void deleteEnvironment_returns_404_when_not_found() throws Exception {
-        doThrow(new EnvironmentNotFoundException("message")).when(environmentRepository).delete(any());
+        doThrow(new EnvironmentNotFoundException(List.of("message"))).when(environmentRepository).delete(any());
 
         mockMvc.perform(delete(environmentBasePath + "/env test"))
             .andDo(MockMvcResultHandlers.log())
@@ -176,7 +176,7 @@ public class HttpEnvironmentApiTest {
 
     @Test
     public void updateEnvironment_returns_404_when_not_found() throws Exception {
-        when(environmentRepository.findByName(any())).thenThrow(new EnvironmentNotFoundException("message"));
+        when(environmentRepository.findByName(any())).thenThrow(new EnvironmentNotFoundException(List.of("message")));
 
         mockMvc.perform(
                 put(environmentBasePath + "/env test")
@@ -275,7 +275,7 @@ public class HttpEnvironmentApiTest {
             .thenAnswer(iom -> {
                     String envNameParam = iom.getArgument(0);
                     if (!registeredEnvironments.containsKey(envNameParam)) {
-                        throw new EnvironmentNotFoundException("test env not found");
+                        throw new EnvironmentNotFoundException(List.of("test env not found"));
                     }
                     return registeredEnvironments.get(envNameParam);
                 }

@@ -58,7 +58,7 @@ class RestExceptionHandlerTest {
             of(new ScenarioNotFoundException("12345"), NOT_FOUND, status().isNotFound()),
             of(new HttpMessageConversionException(""), BAD_REQUEST, status().isBadRequest()),
             of(new IllegalArgumentException(), BAD_REQUEST, status().isBadRequest()),
-            of(new AlreadyExistingTargetException(""), CONFLICT, status().isConflict()),
+            of(new AlreadyExistingTargetException("", ""), CONFLICT, status().isConflict()),
             of(new ScenarioConversionException("", mock(Exception.class)), UNPROCESSABLE_ENTITY, status().isUnprocessableEntity())
         );
     }

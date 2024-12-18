@@ -10,8 +10,8 @@ package com.chutneytesting.environment.domain.exception;
 @SuppressWarnings("serial")
 public class AlreadyExistingTargetException extends RuntimeException {
 
-    public AlreadyExistingTargetException(String message) {
-        super(message);
+    public AlreadyExistingTargetException(String targetName, String environmentName) {
+        super("Target [" + targetName + "] already exists in [" + environmentName + "] environment");
     }
 
 }

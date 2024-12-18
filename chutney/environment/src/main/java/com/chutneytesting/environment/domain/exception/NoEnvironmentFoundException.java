@@ -9,7 +9,7 @@ package com.chutneytesting.environment.domain.exception;
 
 @SuppressWarnings("serial")
 public class NoEnvironmentFoundException extends RuntimeException {
-    public NoEnvironmentFoundException(String message) {
-        super(message);
+    public NoEnvironmentFoundException() {
+        super("No Environment found");
     }
 }

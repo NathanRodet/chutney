@@ -9,7 +9,7 @@ package com.chutneytesting.environment.domain.exception;
 
 @SuppressWarnings("serial")
 public class UnresolvedEnvironmentException extends RuntimeException {
-    public UnresolvedEnvironmentException(String message) {
-        super(message);
+    public UnresolvedEnvironmentException() {
+        super("There is more than one environment. Could not resolve the default one");
     }
 }

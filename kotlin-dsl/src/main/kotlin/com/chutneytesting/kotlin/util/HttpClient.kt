@@ -77,7 +77,7 @@ object HttpClient {
 
             httpResponse.use { response ->
                 if (response.code >= 300) {
-                    throw HttpClientException("Call to server returned status ${response.reasonPhrase}")
+                    throw HttpClientException(response.reasonPhrase)
                 }
 
                 try {
@@ -194,6 +194,6 @@ object HttpClient {
 }
 
 class HttpClientException : RuntimeException {
-    constructor(message: String?) : super(message)
+    constructor(reasonPhrase: String?) : super("Call to server returned status $reasonPhrase")
     constructor(cause: Throwable?) : super(cause)
 }

@@ -93,11 +93,13 @@ public class JakartaConnectionFactory {
                 }
             });
         } catch (InvalidSelectorException e) {
-            throw new UncheckedJakartaException("Cannot parse selector " + e.getMessage(), e);
+            throw new UncheckedJakartaException(e);
         } catch (NameNotFoundException e) {
-            throw new UncheckedJakartaException("Cannot find destination " + e.getMessage() + " on jms server " + target.name() + " (" + target.uri().toString() + ")", e);
-        } catch (NamingException | JMSException e) {
-            throw new UncheckedJakartaException("Cannot connect to jms server " + target.name() + " (" + target.uri().toString() + "): " + e.getMessage(), e);
+            throw new UncheckedJakartaException(e, target);
+        } catch (NamingException e) {
+            throw new UncheckedJakartaException(e, target);
+        } catch (JMSException e) {
+            throw new UncheckedJakartaException(e, target);
         }
     }
 

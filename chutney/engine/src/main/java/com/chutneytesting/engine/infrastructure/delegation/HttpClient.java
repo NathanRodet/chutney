@@ -71,7 +71,7 @@ public class HttpClient implements DelegationClient {
             StepExecutionReportDto reportDto = restTemplate.postForObject("https://" + delegate.host() + ":" + delegate.port() + EXECUTION_URL, request, StepExecutionReportDto.class);
             return StepExecutionReportMapper.fromDto(reportDto);
         } else {
-            throw new CannotDelegateException("Unable to connect to " + delegate.name() + " at " + delegate.host() + ":" + delegate.port());
+            throw new CannotDelegateException(delegate);
         }
     }
 

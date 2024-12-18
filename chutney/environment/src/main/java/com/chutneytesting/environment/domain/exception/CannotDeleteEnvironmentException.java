@@ -7,14 +7,13 @@
 
 package com.chutneytesting.environment.domain.exception;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 @SuppressWarnings("serial")
 public class CannotDeleteEnvironmentException extends RuntimeException {
 
-    public CannotDeleteEnvironmentException(String message) {
-        super(message);
-    }
-
-    public CannotDeleteEnvironmentException(String message, Exception cause) {
-        super(message, cause);
+    public CannotDeleteEnvironmentException(Path environmentPath, IOException e) {
+        super("Cannot delete configuration file: " + environmentPath, e);
     }
 }

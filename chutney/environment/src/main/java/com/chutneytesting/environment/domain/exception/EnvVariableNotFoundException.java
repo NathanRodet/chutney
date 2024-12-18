@@ -9,7 +9,7 @@ package com.chutneytesting.environment.domain.exception;
 
 @SuppressWarnings("serial")
 public class EnvVariableNotFoundException extends RuntimeException {
-    public EnvVariableNotFoundException(String message) {
-        super(message);
+    public EnvVariableNotFoundException(String variableKey) {
+        super("Variable [" + variableKey + "] not found");
     }
 }

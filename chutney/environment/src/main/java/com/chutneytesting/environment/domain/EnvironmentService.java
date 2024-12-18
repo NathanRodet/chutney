@@ -68,7 +68,7 @@ public class EnvironmentService {
 
     public Environment createEnvironment(Environment environment, boolean force) throws InvalidEnvironmentNameException, AlreadyExistingEnvironmentException {
         if (!force && envAlreadyExist(environment)) {
-            throw new AlreadyExistingEnvironmentException("Environment [" + environment.name + "] already exists");
+            throw new AlreadyExistingEnvironmentException(environment.name);
         }
         createOrUpdate(environment);
         return environment;
@@ -82,11 +82,11 @@ public class EnvironmentService {
         List<String> environmentNames = environmentRepository.listNames();
         if (environmentNames.stream().noneMatch(env -> env.equals(environmentName))) {
             logger.error("Environment not found for name {}", environmentName);
-            throw new EnvironmentNotFoundException("Environment not found for name " + environmentNames);
+            throw new EnvironmentNotFoundException(environmentNames);
         }
         if (environmentNames.size() == 1) {
             logger.error("Cannot delete environment with name {} : cannot delete the last env", environmentName);
-            throw new SingleEnvironmentException("Cannot delete environment with name " + environmentName + " : cannot delete the last env");
+            throw new SingleEnvironmentException(environmentName);
         }
         environmentRepository.delete(environmentName);
         updateEnvironmentHandlers.forEach(renameEnvironmentHandler -> renameEnvironmentHandler.deleteEnvironment(environmentName));
@@ -109,10 +109,10 @@ public class EnvironmentService {
     public String defaultEnvironmentName() throws EnvironmentNotFoundException {
         List<String> envs = environmentRepository.listNames();
         if (envs.size() > 1) {
-            throw new UnresolvedEnvironmentException("There is more than one environment. Could not resolve the default one");
+            throw new UnresolvedEnvironmentException();
         }
         if (envs.isEmpty()) {
-            throw new NoEnvironmentFoundException("No Environment found");
+            throw new NoEnvironmentFoundException();
         }
 
         return envs.get(0);
@@ -209,7 +209,7 @@ public class EnvironmentService {
             .filter(env -> env.containsVariable(key)).toList();
 
         if (!envs.isEmpty() && environments.isEmpty()) {
-            throw new EnvVariableNotFoundException("Variable [" + key + "] not found");
+            throw new EnvVariableNotFoundException(key);
         }
         environments
             .forEach(env -> {
@@ -228,7 +228,7 @@ public class EnvironmentService {
 
     private void createOrUpdate(Environment environment) {
         if (!NAME_VALIDATION_PATTERN.matcher(environment.name).matches()) {
-            throw new InvalidEnvironmentNameException("Environment name must be of 3 to 20 letters, digits, underscore or hyphen");
+            throw new InvalidEnvironmentNameException();
         }
         environmentRepository.save(environment);
     }

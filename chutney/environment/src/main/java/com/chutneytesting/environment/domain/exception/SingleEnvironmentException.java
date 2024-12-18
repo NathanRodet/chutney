@@ -9,11 +9,7 @@ package com.chutneytesting.environment.domain.exception;
 
 public class SingleEnvironmentException extends RuntimeException {
 
-    public SingleEnvironmentException(String message) {
-            super(message);
+    public SingleEnvironmentException(String environmentName) {
+            super("Cannot delete environment with name " + environmentName + " : cannot delete the last env");
         }
-
-    public SingleEnvironmentException(String message, Exception cause) {
-            super(message, cause);
-    }
 }

@@ -7,9 +7,16 @@
 
 package com.chutneytesting.environment.domain.exception;
 
+import java.nio.file.Path;
+import java.util.List;
+
 @SuppressWarnings("serial")
 public class EnvironmentNotFoundException extends RuntimeException {
-    public EnvironmentNotFoundException(String message) {
-        super(message);
+    public EnvironmentNotFoundException(Path environmentPath) {
+        super("Configuration file not found: " + environmentPath);
+    }
+
+    public EnvironmentNotFoundException(List<String> environmentNames) {
+        super("Environment not found for name " + environmentNames);
     }
 }

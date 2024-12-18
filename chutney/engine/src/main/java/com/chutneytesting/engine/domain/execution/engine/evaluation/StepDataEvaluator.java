@@ -148,7 +148,7 @@ public class StepDataEvaluator {
         try {
             Object result = expression.getValue(evaluationContext);
             if (result == null) {
-                throw new EvaluationException("Cannot resolve " + expressionAsString + ", Spring evaluation is null");
+                throw new EvaluationException(expressionAsString);
             }
             return result;
         } catch (org.springframework.expression.EvaluationException e) {
@@ -159,7 +159,7 @@ public class StepDataEvaluator {
                     initialException = (Exception) initialException.getCause();
                 }
             }
-            throw new EvaluationException("Cannot resolve " + expressionAsString + " , " + initialException.getMessage(), initialException);
+            throw new EvaluationException(expressionAsString, initialException);
         }
     }
 
@@ -180,7 +180,7 @@ public class StepDataEvaluator {
         try {
             expression = parser.parseExpression(expressionAsString);
         } catch (ParseException e) {
-            throw new EvaluationException("Cannot parse " + expressionAsString + " , " + e.getMessage(), e);
+            throw new EvaluationException(expressionAsString, e);
         }
         return expression;
     }

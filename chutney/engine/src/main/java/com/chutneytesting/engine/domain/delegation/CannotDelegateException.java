@@ -10,8 +10,8 @@ package com.chutneytesting.engine.domain.delegation;
 @SuppressWarnings("serial")
 public class CannotDelegateException extends RuntimeException {
 
-    public CannotDelegateException(String message) {
-        super(message);
+    public CannotDelegateException(NamedHostAndPort delegate) {
+        super("Unable to connect to " + delegate.name() + " at " + delegate.host() + ":" + delegate.port());
     }
 
 }
