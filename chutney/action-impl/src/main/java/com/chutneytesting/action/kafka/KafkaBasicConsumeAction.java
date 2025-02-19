@@ -42,11 +42,8 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import org.apache.commons.exec.util.MapUtils;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
-import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.util.MimeType;
@@ -54,8 +51,7 @@ import org.springframework.util.MimeTypeUtils;
 
 public class KafkaBasicConsumeAction implements Action {
 
-    private final KafkaConsumerFactoryFactory kafkaConsumerFactoryFactory = new KafkaConsumerFactoryFactory();
-    private static final String AUTO_COMMIT_COUNT_CONFIG = "auto.commit.count";
+    private final KafkaConsumerFactory kafkaConsumerFactory = new KafkaConsumerFactory();
 
     static final String OUTPUT_BODY = "body";
     static final String OUTPUT_BODY_HEADERS_KEY = "headers";
@@ -105,9 +101,7 @@ public class KafkaBasicConsumeAction implements Action {
         this.countDownLatch = new CountDownLatch(this.nbMessages > 0 ? this.nbMessages : 1);
         this.group = group;
         this.logger = logger;
-        this.properties = ofNullable(
-            MapUtils.merge(extractConsumerConfig(target), properties)
-        ).orElse(new HashMap<>());
+        this.properties = ofNullable(properties).orElse(emptyMap());
         this.ackMode = ofNullable(ackMode)
             .or(() -> ofNullable(target).flatMap(t -> t.property("ackMode")))
             .orElse(ContainerProperties.AckMode.BATCH.name());
@@ -127,7 +121,9 @@ public class KafkaBasicConsumeAction implements Action {
 
     @Override
     public ActionExecutionResult execute() {
-        ConcurrentMessageListenerContainer<String, String> messageListenerContainer = createMessageListenerContainer();
+        var messageListenerContainer = kafkaConsumerFactory.create(
+            target, topic, group, resetOffset, ackMode, createMessageListener(), new ListenerContainerErrorHandler(logger), properties
+        );
         try {
             logger.info("Consuming message from topic " + topic);
             messageListenerContainer.start();
@@ -161,6 +157,9 @@ public class KafkaBasicConsumeAction implements Action {
     private boolean applySelector(Map<String, Object> message) {
         if (isBlank(selector)) {
             return true;
+        } else if (message.get(OUTPUT_BODY_PAYLOAD_KEY) instanceof byte[]) {
+            logger.info("Received binary message, ignoring payload selection");
+            return true;
         }
 
         if (recordContentType.getSubtype().contains(APPLICATION_JSON.getSubtype())) {
@@ -173,15 +172,20 @@ public class KafkaBasicConsumeAction implements Action {
             }
         } else if (recordContentType.getSubtype().contains(APPLICATION_XML.getSubtype())) {
             try {
-                Object result = XPathFunction.xpath((String) message.get(OUTPUT_BODY_PAYLOAD_KEY), selector);
+                Object result = XPathFunction.xpath(String.valueOf(message.get(OUTPUT_BODY_PAYLOAD_KEY)), selector);
                 return ofNullable(result).isPresent();
             } catch (Exception e) {
                 logger.info("Received a message, however cannot read process it as xml, ignoring payload selection : " + e.getMessage());
                 return true;
             }
         } else {
-            logger.info("Applying selector as text");
-            return ((String) message.get(OUTPUT_BODY_PAYLOAD_KEY)).contains(selector);
+            if (message.get(OUTPUT_BODY_PAYLOAD_KEY) instanceof String msgString) {
+                logger.info("Applying selector as text");
+                return msgString.contains(selector);
+            } else {
+                logger.info("Received a message, however cannot read process it as text, ignoring payload selection");
+                return true;
+            }
         }
     }
 
@@ -204,18 +208,22 @@ public class KafkaBasicConsumeAction implements Action {
         countDownLatch.countDown();
     }
 
-    private Object extractPayload(ConsumerRecord<String, String> record) {
+    private Object extractPayload(ConsumerRecord<?, ?> record) {
         if (recordContentType.getSubtype().contains(APPLICATION_JSON.getSubtype())) {
-            try {
-                return OBJECT_MAPPER.readValue(record.value(), Map.class);
-            } catch (IOException e) {
-                logger.info("Received a message, however cannot read it as Json fallback as String.");
+            if (record.value() instanceof String recordString) {
+                try {
+                    return OBJECT_MAPPER.readValue(recordString, Map.class);
+                } catch (IOException e) {
+                    logger.info("Received a message, however cannot read it as a Json value");
+                }
+            } else {
+                logger.info("Received a message, however cannot read it as Json because it's not a string");
             }
         }
         return record.value();
     }
 
-    private Map<String, Object> extractMessageFromRecord(ConsumerRecord<String, String> record) {
+    private Map<String, Object> extractMessageFromRecord(ConsumerRecord<?, ?> record) {
         final Map<String, Object> message = new HashMap<>();
         final Map<String, Object> headers = extractHeaders(record);
         checkContentTypeHeader(headers);
@@ -226,7 +234,7 @@ public class KafkaBasicConsumeAction implements Action {
         return message;
     }
 
-    private Map<String, Object> extractHeaders(ConsumerRecord<String, String> record) {
+    private Map<String, Object> extractHeaders(ConsumerRecord<?, ?> record) {
         var result = new HashMap<String, Object>();
         Stream<Header> distinctHeaders = Stream.of(record.headers().toArray()).distinct();
         distinctHeaders.forEach(header -> {
@@ -244,25 +252,6 @@ public class KafkaBasicConsumeAction implements Action {
             }
         });
         return result;
-    }
-
-    private ConcurrentMessageListenerContainer<String, String> createMessageListenerContainer() {
-        ContainerProperties containerProperties = new ContainerProperties(topic);
-        containerProperties.setMessageListener(createMessageListener());
-        if (resetOffset) {
-            containerProperties.setConsumerRebalanceListener(new CustomConsumerRebalanceListener());
-        }
-        containerProperties.setAckMode(ContainerProperties.AckMode.valueOf(this.ackMode));
-        ofNullable(properties.get(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG))
-            .ifPresent(acims -> containerProperties.setAckTime(Long.parseLong(acims)));
-        target.property(AUTO_COMMIT_COUNT_CONFIG)
-            .ifPresent(acc -> containerProperties.setAckCount(Integer.parseInt(acc)));
-
-        ConcurrentMessageListenerContainer<String, String> listenerContainer = new ConcurrentMessageListenerContainer<>(
-            kafkaConsumerFactoryFactory.create(target, group, properties),
-            containerProperties);
-        listenerContainer.setCommonErrorHandler(new ListenerContainerErrorHandler(logger));
-        return listenerContainer;
     }
 
     private Map<String, Object> toOutputs() {
@@ -289,16 +278,5 @@ public class KafkaBasicConsumeAction implements Action {
         } catch (Exception e) {
             logger.error("Cannot parse content type from message received:  " + e.getMessage());
         }
-    }
-
-    private Map<String, String> extractConsumerConfig(Target target) {
-        if (target != null) {
-            Map<String, String> config = new HashMap<>();
-            ConsumerConfig.configDef().configKeys().keySet().forEach(ck ->
-                target.property(ck).ifPresent(cv -> config.put(ck, cv))
-            );
-            return config;
-        }
-        return emptyMap();
     }
 }
