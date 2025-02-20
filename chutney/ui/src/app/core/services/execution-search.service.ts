@@ -14,26 +14,18 @@ import { Execution } from '@core/model';
 @Injectable({
   providedIn: 'root'
 })
-export class DatabaseAdminService {
+export class ExecutionSearchService {
 
-  private adminUrl = '/api/v1/admin/database';
+  private reportUrl = '/api/v1/execution';
 
   constructor(private http: HttpClient) { }
 
   getExecutionReportMatchQuery(query: string): Observable<Execution[]> {
-    return this.http.get<Execution[]>(environment.backend + this.adminUrl + '/execution', {params: {query: query}})
+    return this.http.get<Execution[]>(environment.backend + this.reportUrl + '/search', {params: {query: query}})
     .pipe(
       map((res: Execution[]) => {
           return res.map((execution) => Execution.deserialize(execution));
       })
     )
-  }
-
-  compactDatabase(): Observable<number[]> {
-    return this.http.post<number[]>(environment.backend + this.adminUrl + '/compact', null);
-  }
-
-  computeDatabaseSize(): Observable<number> {
-    return this.http.get<number>(environment.backend + this.adminUrl + '/size');
   }
 }

@@ -61,8 +61,14 @@ export const appRoutes: Routes = [
                 data: {'authorizations': [Authorization.ADMIN_ACCESS]}
             },
             {
-                path: 'databaseAdmin',
-                loadChildren: () => import('./modules/database-admin/database-admin.module').then(m => m.DatabaseAdminModule),
+                path: 'execution/search',
+                loadChildren: () => import('@modules/execution-search/execution-search.module').then(m => m.ExecutionSearchModule),
+                canActivate: [authGuard],
+                data: {'authorizations': [Authorization.SCENARIO_READ]}
+            },
+            {
+                path: 'vacuum',
+                loadChildren: () => import('./modules/vacuum/vacuum.module').then(m => m.VacuumModule),
                 canActivate: [authGuard],
                 data: {'authorizations': [Authorization.ADMIN_ACCESS]}
             },

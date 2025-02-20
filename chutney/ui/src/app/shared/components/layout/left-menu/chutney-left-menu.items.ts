@@ -30,6 +30,12 @@ export const allMenuItems: MenuItem [] = [
                 iconClass: 'fa fa-table',
                 authorizations: [Authorization.DATASET_READ,Authorization.DATASET_WRITE]
             },
+            {
+                label: 'menu.principal.executionSearch',
+                link: '/execution/search',
+                iconClass: 'fa fa-clipboard',
+                authorizations: [Authorization.SCENARIO_READ]
+            },
         ],
     },
     {
@@ -72,8 +78,8 @@ export const allMenuItems: MenuItem [] = [
                 authorizations: [Authorization.ADMIN_ACCESS]
             },
             {
-                label: 'menu.principal.databaseAdmin',
-                link: '/databaseAdmin',
+                label: 'menu.principal.vacuum',
+                link: '/vacuum',
                 iconClass: 'fa fa-database',
                 authorizations: [Authorization.ADMIN_ACCESS]
             },
