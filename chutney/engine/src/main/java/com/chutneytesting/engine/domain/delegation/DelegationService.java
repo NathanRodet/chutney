@@ -31,9 +31,9 @@ public class DelegationService {
 
         List<NamedHostAndPort> agents = ((TargetImpl) target.get()).agents;
         if (!agents.isEmpty()) {
-            NamedHostAndPort nextAgent = agents.get(0);
+            NamedHostAndPort nextAgent = agents.getFirst();
             // TODO should we do that here ?
-            agents.remove(0);
+            agents.removeFirst();
             return new RemoteStepExecutor(delegationClient, nextAgent);
         } else {
             return localStepExecutor;

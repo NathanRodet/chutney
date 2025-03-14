@@ -141,13 +141,11 @@
                     <jmxPort>${jmx.port.local-dev}</jmxPort>
                     <pullPolicy>IF_NOT_PRESENT</pullPolicy>
                     <image>
-                        <name>ghcr.io/enedis-oss/chutney/chutney-server</name>
-                        <runImage>eclipse-temurin:17-jre</runImage>
+                        <name>chutney-acceptance-test-server</name>
+                        <runImage>eclipse-temurin:21-jre</runImage>
                         <env>
-                            <BP_JVM_VERSION>17</BP_JVM_VERSION>
+                            <BP_JVM_VERSION>21</BP_JVM_VERSION>
                         </env>
-                        <builder>paketobuildpacks/builder:base</builder>
-                        <runImage>gcr.io/paketo-buildpacks/run:base-cnb</runImage>
                     </image>
                 </configuration>
                 <executions>
