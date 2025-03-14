@@ -14,12 +14,13 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class ScenarioIndexRepository extends AbstractIndexRepository<ScenarioEntity> {
 
-    public ScenarioIndexRepository(LuceneIndexRepository luceneIndexRepository) {
+    public ScenarioIndexRepository(@Qualifier("scenarioLuceneIndexRepository") LuceneIndexRepository luceneIndexRepository) {
         super("scenario", luceneIndexRepository);
     }
 
@@ -27,7 +28,7 @@ public class ScenarioIndexRepository extends AbstractIndexRepository<ScenarioEnt
     protected Document createDocument(ScenarioEntity scenario) {
         Document document = new Document();
         document.add(new StringField(WHAT, whatValue, Field.Store.YES));
-        document.add(new TextField(ID, scenario.getId().toString(), Field.Store.YES));
+        document.add(new StringField(ID, scenario.getId().toString(), Field.Store.YES));
         document.add(new TextField(TITLE, scenario.getTitle(), Field.Store.YES));
         document.add(new TextField(DESCRIPTION, scenario.getDescription(), Field.Store.YES));
         document.add(new TextField(CONTENT, scenario.getContent(), Field.Store.YES));
