@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -133,7 +132,7 @@ public class FileSystemBackupRepositoryTest {
         sut.save(new Backup(List.of(aBackupable.name())));
 
         // Then
-        verify(aBackupable, times(1)).backup(any());
+        verify(aBackupable).backup(any());
         verify(otherBackupable, never()).backup(any());
     }
 

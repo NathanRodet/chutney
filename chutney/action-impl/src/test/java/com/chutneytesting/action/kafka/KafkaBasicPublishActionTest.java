@@ -41,6 +41,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -60,13 +61,18 @@ public class KafkaBasicPublishActionTest {
     private static final String TOPIC = "topic";
     private static final String PAYLOAD = "payload";
     private static final String GROUP = "mygroup";
-    private final EmbeddedKafkaBroker embeddedKafkaBroker = new EmbeddedKafkaZKBroker(1, true, TOPIC);
+    private static final EmbeddedKafkaBroker embeddedKafkaBroker = new EmbeddedKafkaZKBroker(1, true, TOPIC);
 
     private TestLogger logger;
 
     @BeforeEach
     public void before() {
         logger = new TestLogger();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        embeddedKafkaBroker.destroy();
     }
 
     private Target getKafkaTarget() {

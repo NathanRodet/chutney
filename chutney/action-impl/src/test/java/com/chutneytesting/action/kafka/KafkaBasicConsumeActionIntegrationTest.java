@@ -48,6 +48,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -56,29 +57,37 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 
-public abstract class KafkaBasicConsumeActionIntegrationTest {
+public class KafkaBasicConsumeActionIntegrationTest {
 
     private final String GROUP = "mygroup";
     private String uniqueTopic;
 
-    protected static Producer<Integer, String> producer;
+    private final static EmbeddedKafkaBroker embeddedKafkaBroker = new EmbeddedKafkaZKBroker(1, true);
+    private static Producer<Integer, String> producer;
     private final TestTarget.TestTargetBuilder targetBuilder;
 
     private TestLogger logger;
 
     public KafkaBasicConsumeActionIntegrationTest() {
-        String brokerPath = initBroker();
+        embeddedKafkaBroker.afterPropertiesSet();
+        String brokerPath = embeddedKafkaBroker.getBrokersAsString();
         producer = createProducer(brokerPath);
         targetBuilder = TestTarget.TestTargetBuilder.builder().withTargetId("kafka").withUrl("tcp://" + brokerPath);
     }
-
-    protected abstract String initBroker();
 
     @BeforeEach
     public void before() {
         logger = new TestLogger();
         uniqueTopic = UUID.randomUUID().toString();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        producer.close();
+        embeddedKafkaBroker.destroy();
     }
 
     @Test

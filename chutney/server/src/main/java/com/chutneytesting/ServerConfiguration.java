@@ -35,6 +35,8 @@ import com.chutneytesting.index.infra.config.IndexConfig;
 import com.chutneytesting.index.infra.config.OnDiskIndexConfig;
 import com.chutneytesting.jira.api.JiraXrayEmbeddedApi;
 import com.chutneytesting.scenario.infra.TestCaseRepositoryAggregator;
+import com.chutneytesting.security.domain.AuthenticationService;
+import com.chutneytesting.security.domain.Authorizations;
 import com.chutneytesting.server.core.domain.execution.ScenarioExecutionEngine;
 import com.chutneytesting.server.core.domain.execution.ScenarioExecutionEngineAsync;
 import com.chutneytesting.server.core.domain.execution.ServerTestEngine;
@@ -216,6 +218,11 @@ public class ServerConfiguration {
     @Bean
     CampaignEnvironmentUpdateHandler campaignEnvironmentUpdateHandler(CampaignRepository campaignRepository) {
         return new CampaignEnvironmentUpdateHandler(campaignRepository);
+    }
+
+    @Bean
+    public AuthenticationService authenticationService(Authorizations authorizations) {
+        return new AuthenticationService(authorizations);
     }
 
     // TODO - To move in infra when it will not be used in domain (ScenarioExecutionEngineAsync)

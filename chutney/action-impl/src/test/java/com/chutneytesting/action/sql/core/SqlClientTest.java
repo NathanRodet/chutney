@@ -72,13 +72,11 @@ public class SqlClientTest {
         @BeforeAll
         static void beforeAll() {
             oracle.start();
-            String address = oracle.getHost();
-            Integer port = oracle.getFirstMappedPort();
             sqlTarget = TestTarget.TestTargetBuilder.builder()
                 .withTargetId("sql")
-                .withUrl("jdbc:oracle:thin:@" + address + ":" + port + "/testDB")
-                .withProperty("user", "testUser")
-                .withProperty("password", "testPassword")
+                .withUrl(oracle.getJdbcUrl())
+                .withProperty("user", oracle.getUsername())
+                .withProperty("password", oracle.getPassword())
                 .build();
         }
 

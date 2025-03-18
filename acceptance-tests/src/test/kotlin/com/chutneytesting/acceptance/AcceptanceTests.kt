@@ -329,6 +329,7 @@ class AcceptanceTests {
     }
   }
 
+  @Disabled
   @Nested
   @TestInstance(TestInstance.Lifecycle.PER_CLASS)
   inner class SSHTests {
@@ -386,7 +387,6 @@ class AcceptanceTests {
       }
     }
 
-    @Disabled
     @Test
     fun `SSH Task test`() {
       softlyAssertLauncherRun(

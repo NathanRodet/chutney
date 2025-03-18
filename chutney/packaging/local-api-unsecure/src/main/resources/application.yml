@@ -51,6 +51,9 @@ chutney:
   jira:
     configuration-folder: ${chutney.configuration-folder}/jira
 
+  security:
+    enabled: false
+
   server:
     editions:
       ttl:
