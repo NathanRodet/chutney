@@ -26,8 +26,10 @@ import com.chutneytesting.engine.domain.execution.strategies.StepStrategyDefinit
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subjects.ReplaySubject;
 import io.reactivex.rxjava3.subjects.Subject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,12 +84,24 @@ public class Reporter {
 
     private void publishReport(Event event) {
         LOGGER.trace("Publish report for execution {}", event.executionId());
-        doIfPublisherExists(event.executionId(), (observer) -> observer.onNext(generateRunningReport(event.executionId())));
+        doIfPublisherExists(event.executionId(), (observer) -> {
+            try {
+                observer.onNext(generateRunningReport(event.executionId()));
+            } catch (Exception e) {
+                LOGGER.warn("Failed to generate report for execution {}", event.executionId(), e);
+            }
+        });
     }
 
     private void publishLastReport(Event event) {
         LOGGER.trace("Publish report for execution {}", event.executionId());
-        doIfPublisherExists(event.executionId(), (observer) -> observer.onNext(generateLastReport(event.executionId())));
+        doIfPublisherExists(event.executionId(), (observer) -> {
+            try {
+                observer.onNext(generateLastReport(event.executionId()));
+            } catch (Exception e) {
+                LOGGER.warn("Failed to generate report for execution {}", event.executionId(), e);
+            }
+        });
     }
 
     private void publishReportAndCompletePublisher(Event event) {
@@ -97,7 +111,7 @@ public class Reporter {
         });
     }
 
-    private StepExecutionReport generateRunningReport(long executionId) {
+    private StepExecutionReport generateRunningReport(long executionId) throws CannotGenerateReportException {
         Step step = rootSteps.get(executionId);
         final Status calculatedRootStepStatus = step.status();
 
@@ -110,7 +124,7 @@ public class Reporter {
         return generateReport(step, s -> finalStatus, getEnvironment(step));
     }
 
-    private StepExecutionReport generateLastReport(long executionId) {
+    private StepExecutionReport generateLastReport(long executionId) throws CannotGenerateReportException {
         Step step = rootSteps.get(executionId);
         return generateReport(step, Step::status, getEnvironment(step));
     }
@@ -122,7 +136,13 @@ public class Reporter {
         return (String) step.getScenarioContext().get("environment");
     }
 
-    StepExecutionReport generateReport(Step step, Function<Step, Status> statusSupplier, String env) {
+    StepExecutionReport generateReport(Step step, Function<Step, Status> statusSupplier, String env) throws CannotGenerateReportException {
+        if (step == null) {
+            throw new CannotGenerateReportException("Cannot generate report: Step is null.");
+        }
+
+        List<Step> subStepsCopy = new ArrayList<>(step.subSteps());
+
         try {
             return new StepExecutionReportBuilder()
                 .setName(step.name())
@@ -132,7 +152,9 @@ public class Reporter {
                 .setStatus(statusSupplier.apply(step))
                 .setInformation(step.informations())
                 .setErrors(step.errors())
-                .setSteps(step.subSteps().stream().map(subStep -> generateReport(subStep, Step::status, env)).collect(Collectors.toList()))
+                .setSteps(subStepsCopy.stream()
+                    .map(subStep -> generateReport(subStep, Step::status, env))
+                    .collect(Collectors.toList()))
                 .setEvaluatedInputs(step.getEvaluatedInputs())
                 .setStepResults(step.getStepOutputs())
                 .setEvaluatedInputsSnapshot(step.getStepContextInputSnapshot())
@@ -142,14 +164,10 @@ public class Reporter {
                 .setTarget(step.target())
                 .setStrategy(guardNullStrategy(step.strategy()))
                 .createStepExecutionReport();
+        } catch (CannotGenerateReportException e) {
+            throw e;
         } catch (Exception e) {
-            String error = "Cannot generate step report: " + e.getMessage();
-            LOGGER.error(error, e);
-            return new StepExecutionReportBuilder()
-                .setName(step.name())
-                .setStatus(Status.FAILURE)
-                .setErrors(List.of(error))
-                .createStepExecutionReport();
+            throw new CannotGenerateReportException("Unexpected error while generating report for step " + step.name(), e);
         }
     }
 
@@ -162,17 +180,22 @@ public class Reporter {
         LOGGER.trace("Complete publisher for execution {}", executionId);
         observer.onComplete();
         if (retentionDelaySeconds > 0) {
-            Completable.timer(retentionDelaySeconds, TimeUnit.SECONDS)
-                .subscribe(() -> {
-                    rootSteps.remove(executionId);
-                    reportsPublishers.remove(executionId);
-                    LOGGER.trace("Remove publisher for execution {}", executionId);
-                }, throwable -> LOGGER.error("Cannot remove publisher for execution {}", executionId, throwable));
+            Completable.timer(retentionDelaySeconds, TimeUnit.SECONDS, Schedulers.io())
+                .subscribe(
+                    () -> {
+                        rootSteps.remove(executionId);
+                        reportsPublishers.remove(executionId);
+                        LOGGER.trace("Remove publisher for execution {}", executionId);
+                    },
+                    throwable -> LOGGER.error("Cannot remove publisher for execution {}", executionId, throwable)
+                );
         } else {
             rootSteps.remove(executionId);
             reportsPublishers.remove(executionId);
+            LOGGER.trace("Remove publisher for execution {}", executionId);
         }
     }
+
 
     private void doIfPublisherExists(long executionId, Consumer<Observer<StepExecutionReport>> consumer) {
         Optional.ofNullable((Observer<StepExecutionReport>) reportsPublishers.get(executionId))

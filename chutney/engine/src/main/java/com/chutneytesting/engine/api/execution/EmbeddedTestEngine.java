@@ -19,7 +19,7 @@ import io.reactivex.rxjava3.core.Observable;
 import java.util.Optional;
 
 public final class EmbeddedTestEngine implements TestEngine {
-
+    
     private final ExecutionEngine engine;
     private final Reporter reporter;
     private final ExecutionManager executionManager;

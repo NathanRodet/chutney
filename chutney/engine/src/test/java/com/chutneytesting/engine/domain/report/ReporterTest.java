@@ -15,6 +15,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
 import com.chutneytesting.action.spi.injectable.Target;
@@ -30,8 +31,13 @@ import com.chutneytesting.engine.domain.execution.event.StartScenarioExecutionEv
 import com.chutneytesting.engine.domain.execution.report.Status;
 import com.chutneytesting.engine.domain.execution.report.StepExecutionReport;
 import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +55,35 @@ public class ReporterTest {
         step = buildFakeScenario();
         sut = new Reporter();
         scenarioExecution = ScenarioExecution.createScenarioExecution(null);
+    }
+
+    @Test
+    void testConcurrentModificationOnSubSteps() throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Runnable getter = () -> {
+                try {
+                    while (!Thread.currentThread().isInterrupted()) {
+                        step.removeStepExecution();
+                        step.addStepExecution(buildFakeScenario());
+                        MILLISECONDS.sleep(5);
+                    }
+                } catch (Exception e) {
+                   // should not happen
+                }
+            };
+
+            executor.submit(getter);
+            long startTime = System.currentTimeMillis();
+            while (System.currentTimeMillis() - startTime < 500) {
+                StepExecutionReport report = sut.generateReport(step, Step::status, "env");
+                if (Status.FAILURE.equals(report.status)) {
+                    fail();
+                }
+            }
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     @Test
@@ -197,7 +232,7 @@ public class ReporterTest {
     }
 
     private Step buildStep(StepDefinition definition) {
-        final List<Step> steps = definition.steps.stream().map(this::buildStep).toList();
+        final List<Step> steps = definition.steps.stream().map(this::buildStep).collect(Collectors.toList());
         return new Step(dataEvaluator, definition, null, steps);
     }
 
